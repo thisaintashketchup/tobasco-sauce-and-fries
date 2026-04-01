@@ -1,0 +1,100 @@
+// PREVIOUS CODE WITHOUT LED AND WITH STEPPER MOTOR
+from machine import Pin, PWM
+import time
+import random
+import neopixel
+
+np = neopixel.NeoPixel(Pin(23), 16)
+switch1 = Pin(18, Pin.IN, Pin.PULL_UP)  # Red
+switch2 = Pin(4, Pin.IN, Pin.PULL_UP)  # Blue
+
+pressed1 = 0
+pressed2 = 0
+hits = [False] * 16
+
+tail=PWM(Pin(21, Pin.OUT))
+mag1 = Pin (13, Pin.OUT)
+mag2 = Pin (12, Pin.OUT)
+mag3 = Pin (14, Pin.OUT)
+mag4 = Pin (27, Pin.OUT)
+val = [[0,1,1,1],[0,1,0,0],[0,0,1,0],[0,0,0,1]]
+tail.freq(50)
+
+
+while True:
+    for i in range(16):
+        if not hits[i]:
+            np[i] = (0, 0, 0)
+    np.write()
+    
+    
+    free = [i for i in range(16) if not hits[i]]
+    if not free:
+        time.sleep(1)
+        pressed1 = 0
+        pressed2 = 0
+        hits = [False] * 16
+        continue
+    
+    lightup = random.choice(free)
+    np[lightup] = (10, 10, 10)  
+    np.write()
+    #debounc
+    start = time.ticks_ms()
+    while True:
+        if switch1.value() == 0 and not hits[lightup]:
+            np[lightup] = (20, 3, 1)  # Red hit
+            hits[lightup] = True
+            pressed1 += 1
+            np.write()
+            print ("red: pressed1")
+            time.sleep(0.2) 
+            break
+        if switch2.value() == 0 and not hits[lightup]:
+            np[lightup] = (1, 3, 20)  # Blue hit
+            hits[lightup] = True
+            pressed2 += 1
+            print ("blue: pressed2")
+            np.write()
+            time.sleep(0.2) 
+            break
+            time.sleep(0.2) 
+
+    if pressed1 == 9 or pressed2 == 9:
+        if pressed1 > pressed2:
+            count1 = 0
+            while count1<250:
+                for i in val:
+                    mag1.value(i[0])
+                    mag2.value(i[1])
+                    mag3.value(i[2])
+                    mag4.value(i[3])
+                    time.sleep(0.005)
+                count1 +=1
+                mag1.value(0)
+                mag2.value(0)
+                mag3.value(0)
+                mag4.value(0)
+            for i in range (0,3,1):
+                for i in range(25,123,5):
+                    tail.duty(i)
+                    time.sleep(0.02)
+        elif pressed2 > pressed1:
+            count2 = 0
+            while count2<250:
+                for i in reversed(val):
+                    mag1.value(i[0])
+                    mag2.value(i[1])
+                    mag3.value(i[2])
+                    mag4.value(i[3])
+                    time.sleep(0.005)
+                count2 +=1
+                mag1.value(0)
+                mag2.value(0)
+                mag3.value(0)
+                mag4.value(0)
+            time.sleep(0.2)
+            for i in range (0,3,1):
+                for i in range(25,123,5):
+                    tail.duty(i)
+                    time.sleep(0.02)        
